@@ -1,0 +1,39 @@
+#!/usr/bin/env python
+
+import dbus
+import sys
+import os
+
+BUS_DAEMON_PATH = "/org/x/reader/Daemon"
+BUS_DAEMON_IFACE = "org.x.reader.Daemon"
+BUS_APP_PATH = "/org/x/reader/Xreader"
+BUS_APP_IFACE = "org.x.reader.Application"
+BUS_WINDOW_IFACE = "org.x.reader.Window"
+
+# Parse command line arguments
+def die():
+    print "Usage: synctex_xreader_forward_search texfile linenumber"
+    sys.exit()
+
+if len(sys.argv) > 2:
+    uri = sys.argv[1]
+    try:
+        line = int(sys.argv[2])
+    except ValueError:
+        die()
+else:
+    die()
+
+uri_pdf = "file://" + uri[:-3] + "pdf"
+
+bus = dbus.SessionBus()
+daemon = dbus.Interface(bus.get_object(BUS_DAEMON_IFACE, 
+    BUS_DAEMON_PATH), BUS_DAEMON_IFACE)
+bus_name = daemon.FindDocument(uri_pdf, True)
+app = dbus.Interface(bus.get_object(bus_name, 
+    BUS_APP_PATH), BUS_APP_IFACE)
+window = dbus.Interface(bus.get_object(bus_name, 
+    app.GetWindowList()[0]), BUS_WINDOW_IFACE)  
+# Focus xreader 
+os.system('(nohup  xreader "%s" &) &>/dev/null' % uri_pdf)
+window.SyncView(uri, (line, 0), 0)

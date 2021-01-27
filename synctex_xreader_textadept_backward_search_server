@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+
+import tempfile as tmp
+import os
+import sys
+import glib
+import dbus
+from dbus.mainloop.glib import DBusGMainLoop
+
+# Exit if already running
+LOCKFILE_PREFIX = "backward_search_server_lock_"
+for file in os.listdir(tmp.gettempdir()):
+    if file.startswith(LOCKFILE_PREFIX):
+        print "Already running"
+        sys.exit()
+# We need to assign to a variable to keep the file open
+lockfile = tmp.NamedTemporaryFile(prefix=LOCKFILE_PREFIX) 
+
+# Handler for backward search
+def message_filter(bus, message):
+    args = message.get_args_list()
+    if len(args) > 1:
+        filename = str(args[0])        
+        line = str(args[1][0])        
+        cmd = "goto_file('%s'); goto_line(%s)" % (filename, line)    
+        os.system('textadept -e "%s"' % cmd)
+        # Focus textadept
+        os.system("wmctrl -i -a $(wmctrl -l -x | awk '{if ($3==\"textadept.Textadept\") {print $1}}')")
+
+# Hook up with DBus
+DBusGMainLoop(set_as_default=True)
+bus = dbus.SessionBus()
+bus.add_match_string("interface='org.x.reader.Window', member='SyncSource'")
+bus.add_message_filter(message_filter)
+mainloop = glib.MainLoop()
+mainloop.run()
