@@ -13,6 +13,13 @@ for file in os.listdir(tmp.gettempdir()):
     if file.startswith(LOCKFILE_PREFIX):
         print "Already running"
         sys.exit()
+
+# Fork and detach from the parent proc, exit the parent
+pid = os.fork()
+if pid > 0:
+    sys.exit()
+os.setsid()
+
 # We need to assign to a variable to keep the file open
 lockfile = tmp.NamedTemporaryFile(prefix=LOCKFILE_PREFIX) 
 

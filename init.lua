@@ -1,7 +1,6 @@
 local function forward_search()
   -- Enable backward search (server is started only once)
-  -- This will produce zombies!
-  os.spawn('synctex_xreader_textadept_backward_search_server')
+  os.spawn('synctex_xreader_textadept_backward_search_server'):wait()
   local line = buffer.line_from_position(buffer.current_pos)
   os.spawn(string.format(
     'synctex_xreader_forward_search "%s" %d',
